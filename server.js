@@ -4,6 +4,7 @@ const client = new pg.Client(
 );
 const express = require("express");
 const app = express();
+app.use(express.json());
 
 app.get("/api/employees", async (req, res, next) => {
   try {
@@ -43,6 +44,24 @@ app.delete("/api/employees/:id", async (req, res, next) => {
     next(ex);
   }
 });
+
+app.post("/api/employees", async (req, res, next) => {
+  try {
+    const SQL = `  
+              INSERT INTO employees(txt, department_id)
+              VALUES($1, $2)
+              RETURNING *
+              `;
+    const response = await client.query(SQL, [
+      req.body.txt,
+      req.body.department_id,
+    ]);
+    res.status(201).send(response.rows);
+  } catch (ex) {
+    next(ex);
+  }
+});
+
 app.use((err, req, res, next) => {
   console.log(err);
   res.status(err.status || 500).send({ error: err.message || err });
@@ -70,7 +89,7 @@ const init = async () => {
   SQL = `
       INSERT INTO departments(name) VALUES('IT');
       INSERT INTO departments(name) VALUES('HR');
-      INSERT INTO departments(name) VALUES('BRAINSTORMING');
+      INSERT INTO departments(name) VALUES('Sales');
       INSERT INTO employees(txt, department_id) VALUES ('Brendon', (
         SELECT id FROM departments WHERE name = 'IT'
       ));
@@ -78,7 +97,7 @@ const init = async () => {
         SELECT id FROM departments WHERE name = 'IT'
       ));
       INSERT INTO employees(txt, department_id) VALUES ('Doug', (
-        SELECT id FROM departments WHERE name = 'BRAINSTORMING'
+        SELECT id FROM departments WHERE name = 'Sales'
       ));
       INSERT INTO employees(txt, department_id) VALUES ('Toby', (
         SELECT id FROM departments WHERE name = 'HR'
@@ -93,6 +112,9 @@ const init = async () => {
   console.log("curl localhost:3000/api/employees");
   console.log("curl localhost:3000/api/departments");
   console.log("curl localhost:3000/api/employees/1 -X DELETE");
+  console.log(
+    `curl localhost:3000/api/employees -X POST -d '{"txt": "new employee", "department_id": 1 }' -H 'Content-Type:application/json' `
+  );
 };
 
 init();
