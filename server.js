@@ -62,6 +62,25 @@ app.post("/api/employees", async (req, res, next) => {
   }
 });
 
+app.put("/api/employees/:id", async (req, res, next) => {
+  try {
+    const SQL = ` 
+             UPDATE employees
+             SET txt=$1, department_id=$2
+             WHERE id=$3
+             RETURNING *
+             `;
+    const response = await client.query(SQL, [
+      req.body.txt,
+      req.body.department_id,
+      req.params.id,
+    ]);
+    res.send(response.rows);
+  } catch (ex) {
+    next(ex);
+  }
+});
+
 app.use((err, req, res, next) => {
   console.log(err);
   res.status(err.status || 500).send({ error: err.message || err });
@@ -114,6 +133,9 @@ const init = async () => {
   console.log("curl localhost:3000/api/employees/1 -X DELETE");
   console.log(
     `curl localhost:3000/api/employees -X POST -d '{"txt": "new employee", "department_id": 1 }' -H 'Content-Type:application/json' `
+  );
+  console.log(
+    `curl localhost:3000/api/employees/1 -X PUT -d '{"txt": "updated employee", "department_id": 1 }' -H 'Content-Type:application/json' `
   );
 };
 
