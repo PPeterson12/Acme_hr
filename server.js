@@ -17,6 +17,7 @@ app.get("/api/employees", async (req, res, next) => {
     next(ex);
   }
 });
+
 app.get("/api/departments", async (req, res, next) => {
   try {
     const SQL = `  
@@ -28,6 +29,23 @@ app.get("/api/departments", async (req, res, next) => {
   } catch (ex) {
     next(ex);
   }
+});
+
+app.delete("/api/employees/:id", async (req, res, next) => {
+  try {
+    const SQL = `  
+            DELETE FROM employees
+            WHERE id = $1
+            `;
+    await client.query(SQL, [req.params.id]);
+    res.sendStatus(204);
+  } catch (ex) {
+    next(ex);
+  }
+});
+app.use((err, req, res, next) => {
+  console.log(err);
+  res.status(err.status || 500).send({ error: err.message || err });
 });
 
 const init = async () => {
@@ -72,8 +90,9 @@ const init = async () => {
   app.listen(port, () => console.log(`listening on port ${port}`));
 
   console.log("some curl commands to test");
-  console.log("curl localhost:3000/api/emplyees");
+  console.log("curl localhost:3000/api/employees");
   console.log("curl localhost:3000/api/departments");
+  console.log("curl localhost:3000/api/employees/1 -X DELETE");
 };
 
 init();
